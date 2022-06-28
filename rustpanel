@@ -1,0 +1,532 @@
+/**
+ * --------------------
+ *       HTML
+ * --------------------
+ */
+
+// API Uri for fetching ban data
+const API_URL = `https://api-rp7613.rustpanel.ru/api/`;
+
+// Auto finished ban row
+const banRowHtml = `
+    <div class='rp-ban-row'>
+      <div style='display: flex; align-items: center; width: 275px;'>
+        <a class="abobab" href="https://steamcommunity.com/profiles/%STEAM_ID%" target="_blank">
+          <img class="rp-ban-ava" src='%AVATAR%' style='width: 50px; height: 50px; background: black;'></img>
+        </a>
+
+        <div style='display: flex; flex-direction: column; justify-content: center; align-items: start; height: 100%; padding-left: 15px;'>
+          <a class="abobab" href="https://steamcommunity.com/profiles/%STEAM_ID%" target="_blank">
+            <p style='line-height: 1; margin-bottom: 0; font-size: 16px; font-weight: bold;'>%NAME%</p>
+          </a>
+          <p style='opacity: .5; margin-bottom: 0; font-size: 14  px;'>%STEAM_ID%</p>
+        </div>
+      </div>
+
+      <div style='display: flex; flex-direction: column; justify-content: center; align-items: end; width: 280px; height: 60px; padding-left: 15px;'>
+        <p style='line-height: 1; margin-bottom: 0; font-size: 16px; text-overflow: ellipsis; width: 250px; text-align: end;'>%REASON%</p>
+        <p style='opacity: .5; margin-bottom: 0; font-size: 14px;'>%SERVER%</p>
+      </div>
+
+      <div style='display: flex; flex-direction: column; justify-content: center; align-items: center; width: 125px; height: 60px; padding-left: 15px; font-size: 16px;'>
+        <p>%TIME%</p>
+      </div>
+
+      <div style='display: flex; flex-direction: column; justify-content: center; align-items: center; width: 125px; height: 60px; padding-left: 15px; font-size: 16px;'>
+        <p>%BAN_DATE%</p>
+      </div>
+    </div>
+  `;
+
+const banButtonHtml = `
+    <a class='nav-link' role='button' onclick='modalOpen()'>
+      <span>Р‘Р°РЅ-Р»РёСЃС‚</span>
+    </a> 
+  `;
+
+/**
+ * Auto finished container
+ */
+const containerHtml = `
+    <div class='rp-ban-closer' onclick='modalHide()'></div>
+
+    <div class='rp-ban-content'>
+      <div class='rp-ban-waiter' id='rp-ban-waiter'>
+        <div class='rp-ban-waiter-align'>
+          <svg width="60" height="60" viewBox="0 0 105 105" xmlns="http://www.w3.org/2000/svg" fill="#8e9297"> <circle cx="12.5" cy="12.5" r="12.5"> <animate attributeName="fill-opacity" begin="0s" dur="1s" values="1;.2;1" calcMode="linear" repeatCount="indefinite" /> </circle> <circle cx="12.5" cy="52.5" r="12.5" fill-opacity=".5"> <animate attributeName="fill-opacity" begin="100ms" dur="1s" values="1;.2;1" calcMode="linear" repeatCount="indefinite" /> </circle> <circle cx="52.5" cy="12.5" r="12.5"> <animate attributeName="fill-opacity" begin="300ms" dur="1s" values="1;.2;1" calcMode="linear" repeatCount="indefinite" /> </circle> <circle cx="52.5" cy="52.5" r="12.5"> <animate attributeName="fill-opacity" begin="600ms" dur="1s" values="1;.2;1" calcMode="linear" repeatCount="indefinite" /> </circle> <circle cx="92.5" cy="12.5" r="12.5"> <animate attributeName="fill-opacity" begin="800ms" dur="1s" values="1;.2;1" calcMode="linear" repeatCount="indefinite" /> </circle> <circle cx="92.5" cy="52.5" r="12.5"> <animate attributeName="fill-opacity" begin="400ms" dur="1s" values="1;.2;1" calcMode="linear" repeatCount="indefinite" /> </circle> <circle cx="12.5" cy="92.5" r="12.5"> <animate attributeName="fill-opacity" begin="700ms" dur="1s" values="1;.2;1" calcMode="linear" repeatCount="indefinite" /> </circle> <circle cx="52.5" cy="92.5" r="12.5"> <animate attributeName="fill-opacity" begin="500ms" dur="1s" values="1;.2;1" calcMode="linear" repeatCount="indefinite" /> </circle> <circle cx="92.5" cy="92.5" r="12.5"> <animate attributeName="fill-opacity" begin="200ms" dur="1s" values="1;.2;1" calcMode="linear" repeatCount="indefinite" /> </circle></svg>
+          </div>
+      </div>
+      
+      <div class='rp-ban-header'>
+        <p class='rp-ban-title'>РЎРїРёСЃРѕРє Р±Р°РЅРѕРІ</h1>
+      </div>
+      
+
+      <input type="rp-search" placeholder='РџРѕРёСЃРє РїРѕ РЅРёРєСѓ / steamId' autocomplete="off" oninput='searchBanList()' id='rp-search'></input>
+
+      <div class='rp-ban-headerblock'>
+        <p style='width: 275px; margin-bottom: 0;'>РРіСЂРѕРє</p>
+        <p style='width: 280px; margin-bottom: 0; text-align: end;'>РџСЂРёС‡РёРЅР° / СЃРµСЂРІРµСЂ</p>
+        <p style='width: 125px; margin-bottom: 0; text-align: center;'>Р”Р»РёС‚РµР»СЊРЅРѕСЃС‚СЊ</p>
+        <p style='width: 125px; margin-bottom: 0; text-align: center;'>Р”Р°С‚Р°</p>
+      </div>
+      <div id='rp-ban-container' style='padding: 10px'>
+        
+      </div>
+    </div>
+  
+      <style>
+      p {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+.rp-ban-header {
+  text-align: center;
+  padding: 0px 0px 20px 0px;
+}
+
+.rp-ban-title {
+  font-size: 26px;
+  font-weight: bold;
+  display: block;
+  text-align: center;
+  color: #ffffff7e;
+  text-transform: uppercase;
+}
+
+.rp-ban-headerblock {
+  overflow: hidden; 
+  color: #a7a7a7; 
+  padding: 10px; 
+  height: 35px; 
+  display: flex; 
+  justify-content: space-between; 
+  align-items: center; 
+  background: #242426; 
+  border-radius: 10px 10px 0 0; 
+  margin-top: 15px;
+}
+
+.rp-ban-wrapper {
+  position: fixed;
+  width: 100vw;
+  height: 100vh;
+  background: #656565bd;
+  backdrop-filter: blur(10px);
+
+  left: 0;
+  top: 0;
+
+  z-index: 9999;
+
+  justify-content: center;
+  align-items: center;
+
+  overflow: hidden;
+  display: none;
+
+  animation: fade-in .5s cubic-bezier(0.36, 0.01, 0, 1.32) both;
+}
+
+#rp-ban-container {
+  width: 100%;
+
+  max-height: 565px;
+  overflow-y: scroll;
+
+  color: white;
+
+  background: rgb(36 36 38 / 50%);
+  border-radius: 0px 0px 10px 10px;
+}
+
+.rp-ban-waiter-align {
+  display: flex;
+
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.rp-ban-waiter {
+  height: 100%;
+  width: 100%;
+
+  top: 0;
+  left: 0;
+
+  border-radius: 25px;
+
+  transition: all .5s;
+  pointer-events: none;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  z-index: 999999;
+  background: #121212;
+
+  position: absolute;
+}
+
+.rp-ban-ava {
+  transform: scale(1);
+  transition: all 220ms ease-out;
+  border-radius: 10px;
+}
+.rp-ban-ava:hover {
+  transform: scale(0.9);
+  transition: all 220ms ease-out;
+}
+
+.rp-ban-closer {
+  position: absolute;
+
+  width: 100%;
+  height: 100%;
+  z-index: 999999;
+}
+
+.rp-ban-content {
+  width: auto;
+  max-width: 70vw;
+
+  height: auto;
+  
+  position: relative;
+  background: transparent;
+  border-radius: 25px;
+
+  padding: 25px;
+
+  animation: scale-in .3s cubic-bezier(0.36, 0.01, 0, 1.32) both;
+  z-index: 99999999;
+}
+
+.rp-ban-row {
+  width: 100%;
+
+  margin-top: 10px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.rp-ban-row:first-child {
+  margin-top: 0px !important;
+}
+
+input[type="rp-search"] {
+  background: #242426;
+  color: white;
+  border-radius: 10px;
+  outline: none;
+  border: none;
+  padding: 6px 10px 6px 10px;
+  margin-left: 0px;
+  width: 100%;
+  height: 40px;
+}
+
+.abobab {
+  color: white;
+  opacity: 1;
+  letter-spacing: 0px;
+  transition: all 100ms ease-out;
+}
+.abobab:hover {
+  color: white;
+  opacity: 1;
+  letter-spacing: 0px;
+  transition: all 100ms ease-out;
+}
+
+.rp-ban-footer {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  margin-top: 10px;
+}
+
+.btn-loadmore {
+  background: #3d3d41;
+  color: #8e9297;
+  border: none;
+  border-radius: 10px;
+  padding: 5px 15px;
+  height: 45px;
+  width: 100%;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.btn-loadmore:hover {
+  background: #49494d;
+  color: #a2a2a5;
+}
+
+input[type="rp-search"]::placeholder {
+  color: #3d3d41 !important;
+}
+
+::-webkit-scrollbar {
+  width: 5px;
+  height: 0px;
+}
+
+::-webkit-scrollbar-track {
+  box-shadow: inset 0 0 5px transparent; 
+  border-radius: 10px;
+}
+ 
+/* Handle */
+::-webkit-scrollbar-thumb {
+  background: #39393d; 
+  border-radius: 10px;
+}
+
+
+@keyframes scale-in {
+  0% {
+      transform: scale(0);
+      -webkit-transform: scale(0);
+      opacity: 0;
+  }
+  100% {
+      transform: scale(1);
+      -webkit-transform: scale(1);
+      opacity: 1;
+  }
+}  
+
+@keyframes scale-out {
+  0% {
+    -webkit-transform: scale(1);
+            transform: scale(1);
+    opacity: 1;
+  }
+  100% {
+    -webkit-transform: scale(0);
+            transform: scale(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fade-in {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+      </style>
+    `;
+
+const moreHtml = `
+    <div class='rp-ban-footer'>
+      <button class='btn-loadmore' onclick='nextPage()' id='rp-more-button'>РџРѕРєР°Р·Р°С‚СЊ РµС‰С‘</button>
+    </div>
+  `;
+
+/**
+ * Last fetched ban page
+ */
+let currentPage = 0;
+let currentSearch = undefined;
+
+/**
+ * --------------------
+ *      HTML END
+ * --------------------
+ */
+
+
+/**
+ * Storage section
+ */
+const storage = {
+  body: undefined,
+
+  modal: {
+    root: undefined,
+    elem: undefined,
+    banContainer: undefined,
+    waiter: undefined
+  },
+}
+
+/**
+ * Looking for a body, and storing it
+ */
+const restoreStorage = () => {
+  storage.body = document.getElementsByTagName('body')[0];
+}
+
+/**
+ * Creating initial modal, it is hided by default
+ */
+const boostrap = () => {
+  const menu = document.getElementsByClassName('navbar-nav')[0];
+  if (!menu) {
+    setTimeout(() => boostrap(), 100);
+    return;
+  }
+
+  const elem = document.createElement('li');
+
+  elem.classList.add('nav-item');
+
+  elem.innerHTML = banButtonHtml;
+
+  menu.appendChild(elem);
+
+  storage.modal.root = document.createElement('div');
+
+  storage.modal.root.innerHTML = containerHtml;
+
+  storage.body.appendChild(storage.modal.root);
+
+  storage.modal.elem = storage.modal.root;
+  storage.modal.banContainer = document.getElementById('rp-ban-container');
+  storage.modal.waiter = document.getElementById('rp-ban-waiter');
+
+  storage.modal.root.classList.add('rp-ban-wrapper');
+}
+
+/**
+ * Main modal hide method
+ */
+const modalHide = () => {
+  const styles = storage.modal.elem.style;
+
+  if (styles.display !== 'none') {
+    styles.display = 'none';
+  }
+
+  document.getElementsByTagName('body')[0].style['overflow'] = 'auto';
+}
+
+/**
+ * Main modal open method
+ */
+const modalOpen = () => {
+  currentPage = 0;
+  currentSearch = '';
+  try {
+    storage.modal.banContainer.innerHTML = '';
+  }
+  catch {
+
+  }
+
+  const styles = storage.modal.elem.style;
+
+  if (styles.display !== 'flex') {
+    styles.display = 'flex';
+  }
+
+  document.getElementsByTagName('body')[0].style['overflow'] = 'hidden';
+
+  setTimeout(() => {
+    loadBans();
+  }, 0.1 * 1000);
+}
+
+const apiRequest = async () => {
+  return await new Promise((res) => {
+    const request = new XMLHttpRequest();
+  
+    request.open('GET', `${API_URL}ban?page=${currentPage}&onPage=40${currentSearch ? `&search=${currentSearch}` : ''}`);
+  
+    request.onload = () => {
+      res(JSON.parse(request.response));
+    }
+  
+    request.send();
+  });
+}
+
+let searchFallback = null;
+
+const searchBanList = () => {
+  if (searchFallback) {
+    return;
+  }
+
+  searchFallback = setTimeout(async () => {
+    currentSearch = document.getElementById('rp-search').value;
+    currentPage = 0;
+  
+    storage.modal.banContainer.innerHTML = '';
+  
+    await loadBans();
+
+    searchFallback = null;
+  }, 500);
+}
+
+const nextPage = () => {
+  currentPage++;
+
+  loadBans();
+}
+
+const loadBans = async () => {
+  const removeButton = document.getElementById("rp-more-button");
+  if (removeButton) {
+    removeButton.outerHTML = '';
+  }
+  const banWaiter = document.getElementById("rp-ban-waiter");
+  if (banWaiter) {
+    banWaiter.style.opacity = 0;
+  }
+
+  let finalStr = storage.modal.banContainer.innerHTML;
+
+  const bans = await apiRequest();
+
+  bans.data.filter(v => !v.unban).forEach(value => {
+    finalStr += prepareBanRow(value);
+  });
+  
+  if (bans.data.length == 40) {
+    finalStr += moreHtml;
+  }
+
+  storage.modal.banContainer.innerHTML = finalStr;
+}
+
+const prepareBanRow = (ban) => {
+  let time = 'РќР°РІСЃРµРіРґР°';
+  
+  if (ban.expired) {
+    const diff = +(new Date(ban.expired)) - +(new Date(ban.createdAt));
+
+    time = `${Math.ceil(diff / 24 / 60 / 60 / 1000)} РґРЅРµР№`;
+  }
+
+  return banRowHtml
+    .replace('%AVATAR%', ban.target.info.steamAvatar)
+    .replace('%NAME%', ban.target.info.steamName)
+    .replace('%STEAM_ID%', ban.target.info.steamId)
+    .replace('%STEAM_ID%', ban.target.info.steamId)
+    .replace('%STEAM_ID%', ban.target.info.steamId)
+    .replace('%SERVER%', ban.server ? ban.server.name : 'РќР° РІСЃРµС… СЃРµСЂРІРµСЂР°С…')
+    .replace('%REASON%', ban.reason)
+    .replace('%BAN_DATE%', convertDate(ban.createdAt))
+    .replace('%TIME%', time);
+};
+
+const convertDate = (inputFormat) => {
+  function pad(s) { return (s < 10) ? '0' + s : s; }
+  var d = new Date(inputFormat)
+  return [pad(d.getDate()), pad(d.getMonth()+1), d.getFullYear()].join('.')
+}
+
+window.onload = () => {
+  restoreStorage();
+
+  boostrap();
+}
